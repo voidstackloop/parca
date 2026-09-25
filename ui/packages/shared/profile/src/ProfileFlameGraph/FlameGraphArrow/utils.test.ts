@@ -11,18 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import type {Table} from '@uwdata/flechette';
 import {describe, expect, it} from 'vitest';
 
 import {nodeLabel} from './utils';
 
 // Minimal stand-in for a flechette Table: nodeLabel only ever calls
 // `table.getChild(field)?.get(row)`.
-const fakeTable = (row: Record<string, unknown>): any => ({
-  getChild: (field: string) => {
-    if (!(field in row)) return undefined;
-    return {get: (_: number) => row[field]};
-  },
-});
+const fakeTable = (row: Record<string, unknown>): Table =>
+  ({
+    getChild: (field: string) => (field in row ? {get: () => row[field]} : undefined),
+  }) as unknown as Table;
 
 describe('nodeLabel', () => {
   it('renders <unknown> when both function name and address are empty/zero', () => {
@@ -45,6 +44,18 @@ describe('nodeLabel', () => {
       location_address: 4096n,
     });
     expect(nodeLabel(table, 0, false)).toBe('0x1000');
+  });
+
+  it('treats a zero address like a missing one when the binary name is shown', () => {
+    const base = {
+      labels_only: false,
+      depth: 2,
+      function_name: '',
+      mapping_file: '/usr/lib/libc.so.6',
+    };
+
+    expect(nodeLabel(fakeTable({...base, location_address: 0n}), 0, true)).toBe('[libc.so.6]');
+    expect(nodeLabel(fakeTable(base), 0, true)).toBe('[libc.so.6]');
   });
 
   it('prefers the function name when present', () => {
