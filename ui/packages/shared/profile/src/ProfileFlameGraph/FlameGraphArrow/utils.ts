@@ -54,7 +54,7 @@ export function nodeLabel(table: Table, row: number, showBinaryName: boolean): s
   }
 
   const addressBigInt: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row);
-  const address = hexifyAddress(addressBigInt);
+  const address = addressBigInt === 0n ? '' : hexifyAddress(addressBigInt);
   const fallback = `${mappingString}${address}`;
   return fallback === '' ? '<unknown>' : fallback;
 }
